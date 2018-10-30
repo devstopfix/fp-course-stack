@@ -71,12 +71,19 @@ foldLeft f b (h :. t) = let b' = f b h in b' `seq` foldLeft f b' t
 -- prop> \x -> x `headOr` infinity == 0
 --
 -- prop> \x -> x `headOr` Nil == x
-headOr ::
-  a
-  -> List a
-  -> a
-headOr =
-  error "todo: Course.List#headOr"
+headOr :: a -> List a -> a
+headOr = 
+  foldRight const 
+
+-- headOr :: a -> List a -> a
+-- headOr d Nil = d
+-- headOr d (x :. xs) = x
+
+-- foldRight :: (a -> b -> b) -> b -> List a -> b
+-- foldRight :: (+) acc0 
+-- [a + b + c + acc0]
+
+  -- error "todo: Course.List#headOr"
 
 -- | The product of the elements of a list.
 --
@@ -88,11 +95,10 @@ headOr =
 --
 -- >>> product (1 :. 2 :. 3 :. 4 :. Nil)
 -- 24
-product ::
-  List Int
-  -> Int
-product =
-  error "todo: Course.List#product"
+product :: List Int -> Int
+product = foldRight (*) 1
+
+
 
 -- | Sum the elements of the list.
 --
@@ -106,8 +112,7 @@ product =
 sum ::
   List Int
   -> Int
-sum =
-  error "todo: Course.List#sum"
+sum = foldRight (+) 0
 
 -- | Return the length of the list.
 --
@@ -115,11 +120,12 @@ sum =
 -- 3
 --
 -- prop> \x -> sum (map (const 1) x) == length x
+
 length ::
   List a
   -> Int
-length =
-  error "todo: Course.List#length"
+length = foldRight (const ((+) 1)) 0
+
 
 -- | Map the given function on each element of the list.
 --
@@ -129,12 +135,12 @@ length =
 -- prop> \x -> headOr x (map (+1) infinity) == 1
 --
 -- prop> \x -> map id x == x
-map ::
-  (a -> b)
-  -> List a
-  -> List b
-map =
-  error "todo: Course.List#map"
+map :: (a -> b)  -> List a  -> List b
+map f =
+  let h = (:.) . f
+  in foldRight h Nil
+
+  -- error "todo: Course.List#map"
 
 -- | Return elements satisfying the given predicate.
 --
@@ -150,8 +156,11 @@ filter ::
   (a -> Bool)
   -> List a
   -> List a
-filter =
-  error "todo: Course.List#filter"
+filter f = 
+  let h x y = if (f x) then ((:.) x y) else y 
+  in foldRight h Nil
+
+--  error "todo: Course.List#filter"
 
 -- | Append two lists to a new list.
 --
@@ -169,8 +178,8 @@ filter =
   List a
   -> List a
   -> List a
-(++) =
-  error "todo: Course.List#(++)"
+(++) as bs = 
+  foldRight (:.) bs as 
 
 infixr 5 ++
 
@@ -187,9 +196,8 @@ infixr 5 ++
 flatten ::
   List (List a)
   -> List a
-flatten =
-  error "todo: Course.List#flatten"
-
+flatten = foldRight (++) Nil
+  
 -- | Map a function then flatten to a list.
 --
 -- >>> flatMap (\x -> x :. x + 1 :. x + 2 :. Nil) (1 :. 2 :. 3 :. Nil)
@@ -204,8 +212,8 @@ flatMap ::
   (a -> List b)
   -> List a
   -> List b
-flatMap =
-  error "todo: Course.List#flatMap"
+flatMap f xs = flatten $ (map f xs) 
+  -- error "todo: Course.List#flatMap"
 
 -- | Flatten a list of lists to a list (again).
 -- HOWEVER, this time use the /flatMap/ function that you just wrote.
@@ -214,9 +222,8 @@ flatMap =
 flattenAgain ::
   List (List a)
   -> List a
-flattenAgain =
-  error "todo: Course.List#flattenAgain"
-
+flattenAgain = flatMap id
+  
 -- | Convert a list of optional values to an optional list of values.
 --
 -- * If the list contains all `Full` values, 
@@ -242,9 +249,10 @@ flattenAgain =
 seqOptional ::
   List (Optional a)
   -> Optional (List a)
-seqOptional =
-  error "todo: Course.List#seqOptional"
-
+seqOptional  =
+  let f (Full a) (Full b) = Full (a :. b)
+      f _ _ = Empty
+  in foldRight f $ Full Nil 
 -- | Find the first element in the list matching the predicate.
 --
 -- >>> find even (1 :. 3 :. 5 :. Nil)
